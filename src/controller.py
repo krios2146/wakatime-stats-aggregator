@@ -1,5 +1,4 @@
 import logging
-from sys import is_finalizing
 from typing import Annotated
 from fastapi import FastAPI, Query, Request
 from fastapi.datastructures import QueryParams
