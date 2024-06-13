@@ -3,9 +3,9 @@ from uuid import UUID
 import matplotlib
 import matplotlib.pyplot as plt
 
-from data_node.github_language_data_node import GithubLanguageDataNode
-from data_node.wakatime_data_node import WakatimeDataNode
-from image_manager import save_plot
+from . import chart_manager
+from .model.github_language_item_dto import GithubLanguageItemDto
+from .model.wakatime.wakatime_item_dto import WakatimeItemDto
 
 matplotlib.use("TkAgg")
 custom_font = {
@@ -23,12 +23,12 @@ log.setLevel(logging.DEBUG)
 
 
 def create_pie_chart(
-    data_list: list[WakatimeDataNode],
+    data_list: list[WakatimeItemDto],
     uuid: UUID,
-    langs_data: list[GithubLanguageDataNode] | None = None,
+    langs_data: list[GithubLanguageItemDto] | None = None,
 ) -> None:
-    log.info(f"Creating pie chart for uuid - {uuid}")
-    box, (left_plot, right_plot) = plt.subplots(1, 2)
+    log.info(f"Creating pie chart {uuid}")
+    box, (left_plot, right_plot) = plt.subplots(1, 2)  # type: ignore[all]
 
     percents: list[float] = [data.percent for data in data_list[:5]]
     names: list[str] = [data.name for data in data_list[:5]]
@@ -61,16 +61,16 @@ def create_pie_chart(
     # setting background for the entire box (figure)
     box.patch.set_facecolor(GITHUB_BG_COLOR)
 
-    save_plot(box, uuid)
+    chart_manager.save_chart(box, uuid)
 
 
 def _get_colors(
-    github_langs_data: list[GithubLanguageDataNode] | None, languages: list[str]
-) -> list | None:
+    github_langs_data: list[GithubLanguageItemDto] | None, languages: list[str]
+) -> list[str | tuple[float, float, float, float]] | None:
     if github_langs_data is None:
         return None
 
-    colors = []
+    colors: list[str | tuple[float, float, float, float]] = []
     defaultColors = plt.get_cmap("tab10")
 
     for index, language in enumerate(languages):

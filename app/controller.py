@@ -1,23 +1,37 @@
 import logging
 from typing import Annotated
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.datastructures import QueryParams
+from fastapi.responses import FileResponse
+
+from . import chart_service
+from .model.chart import Chart
+from .model.chart_data import ChartData
+from .model.chart_type import ChartType
+from .model.chart_request import ChartRequest
 
 
-log = logging.getLogger("uvicorn.error")
-log.level = logging.DEBUG
+log = logging.getLogger(__name__)
 
 app = FastAPI()
 
 
 @app.get("/api/{username}/pie/languages")
-def languages(username: str, hide: str | None = None):
+def languages(username: str, hide: str | None = None) -> FileResponse:
     languages_to_hide: set[str] | None = _parse_hide(hide)
 
-    return {
-        "username:": username,
-        "hide": languages_to_hide,
-    }
+    chart_request: ChartRequest = ChartRequest(
+        ChartType.PIE, ChartData.LANGUAGES, username, hide=languages_to_hide
+    )
+
+    chart: Chart | None = chart_service.create_chart(chart_request)
+
+    if chart is None:
+        raise HTTPException(
+            status_code=500, detail="Couldn't create a pie chart for some reason"
+        )
+
+    return FileResponse(chart.path)
 
 
 @app.get("/api/{username}/pie/projects")
@@ -28,34 +42,56 @@ def projects(
     group: Annotated[list[str] | None, Query()] = None,
 ):
     elements_to_hide: set[str] | None = _parse_hide_list(hide)
-    projects_colors: dict[str, str] | None = None
+    project_colors: dict[str, str] | None = None
 
     groups: dict[str, set[str]] | None = None
-    groups_colors: dict[str, str] | None = None
+    group_colors: dict[str, str] | None = None
 
     parse_group_result = _parse_group(group, request.query_params)
 
     if parse_group_result is not None:
-        (groups, groups_colors) = parse_group_result
+        (groups, group_colors) = parse_group_result
 
-    projects_colors = _parse_project_colors(
+    project_colors = _parse_project_colors(
         request.query_params, list(groups.keys()) if groups is not None else None
     )
 
-    return {
-        "username:": username,
-        "elements_to_hide": elements_to_hide,
-        "groups": groups,
-        "groups_colors": groups_colors,
-        "projcts_colors": projects_colors,
-    }
+    chart_request: ChartRequest = ChartRequest(
+        ChartType.PIE,
+        ChartData.PROJECTS,
+        username,
+        hide=elements_to_hide,
+        colors=project_colors,
+        groups=groups,
+        group_colors=group_colors,
+    )
+
+    chart: Chart | None = chart_service.create_chart(chart_request)
+
+    if chart is None:
+        raise HTTPException(
+            status_code=500, detail="Couldn't create a pie chart for some reason"
+        )
+
+    return FileResponse(chart.path)
 
 
 @app.get("/api/{username}/pie/editors")
 def editors(username: str, hide: str | None = None):
     editors_to_hide: set[str] | None = _parse_hide(hide)
 
-    return {"username:": username, "hide": editors_to_hide}
+    chart_request: ChartRequest = ChartRequest(
+        ChartType.PIE, ChartData.PROJECTS, username, hide=editors_to_hide
+    )
+
+    chart: Chart | None = chart_service.create_chart(chart_request)
+
+    if chart is None:
+        raise HTTPException(
+            status_code=500, detail="Couldn't create a pie chart for some reason"
+        )
+
+    return FileResponse(chart.path)
 
 
 def _parse_hide_list(hide_query: list[str] | None) -> set[str] | None:

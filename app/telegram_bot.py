@@ -7,7 +7,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 
 from api_client import get_github_languages_info, get_last_7_days_data
-from data_node.github_language_data_node import GithubLanguageDataNode
+from data_node.github_language_data_node import GithubLanguageItemDto
 from data_node.wakatime_data_node import WakatimeDataNode
 from data_processor import create_pie_chart
 from exception.ChatIdMissingError import ChatIdMissingError
@@ -115,13 +115,13 @@ async def languages(update: Update, context: ContextTypes.DEFAULT_TYPE):
             WakatimeDataNode(language) for language in wakatime_languages_response
         ]
         github_languages_data = [
-            GithubLanguageDataNode(language) for language in github_languages_response
+            GithubLanguageItemDto(language) for language in github_languages_response
         ]
         github_languages_data.append(
-            GithubLanguageDataNode({"name": "Vue.js", "color": "#41b883"})
+            GithubLanguageItemDto({"name": "Vue.js", "color": "#41b883"})
         )
         github_languages_data.append(
-            GithubLanguageDataNode({"name": "Bash", "color": "#89e051"})
+            GithubLanguageItemDto({"name": "Bash", "color": "#89e051"})
         )
 
         create_pie_chart(
