@@ -24,18 +24,21 @@ def create_chart(chart_request: ChartRequest) -> Chart | None:
     )
 
     data: list[WakatimeItemDto] | None = None
-    github_languages: list[GithubLanguageItemDto] | None = None
+    colors: dict[str, str] | None = chart_request.colors
 
     match chart_request.chart_data:
         case ChartData.LANGUAGES:
             data = response.data.languages
             github_languages = github_api_client.get_github_languages()
+            colors = _merge_github_lang_colors(colors, github_languages)
 
         case ChartData.PROJECTS:
             data = response.data.projects
 
         case ChartData.EDITORS:
             data = response.data.editors
+
+    colors = _merge_group_colors(colors, chart_request.group_colors)
 
     assert data is not None
 
@@ -44,9 +47,7 @@ def create_chart(chart_request: ChartRequest) -> Chart | None:
 
     match chart_request.chart_type:
         case ChartType.PIE:
-            chart_builder.create_pie_chart(
-                data, chart_request.uuid, chart_request.colors
-            )
+            chart_builder.create_pie_chart(data, chart_request.uuid, colors)
 
     chart_path: str | None = chart_manager.find_by_uuid(chart_request.uuid)
 
@@ -54,6 +55,35 @@ def create_chart(chart_request: ChartRequest) -> Chart | None:
         return None
 
     return Chart(chart_request.uuid, chart_path)
+
+
+def _merge_github_lang_colors(
+    colors: dict[str, str] | None, github_languages: list[GithubLanguageItemDto]
+) -> dict[str, str] | None:
+    default_colors: dict[str, str] = {
+        github_language.name: github_language.color
+        for github_language in github_languages
+    }
+
+    if colors is None:
+        return default_colors
+
+    for default_color in default_colors:
+        for color in colors:
+            if default_color.lower() == color:
+                default_colors[color] = colors[color]
+
+
+def _merge_group_colors(
+    colors: dict[str, str] | None, group_colors: dict[str, str] | None
+) -> dict[str, str] | None:
+    if colors is None:
+        return group_colors
+
+    if group_colors is None:
+        return colors
+
+    return colors | group_colors
 
 
 def _hide(data: list[WakatimeItemDto], hide: set[str] | None) -> list[WakatimeItemDto]:
