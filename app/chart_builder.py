@@ -4,7 +4,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from . import chart_manager
-from .model.github_language_item_dto import GithubLanguageItemDto
 from .model.wakatime.wakatime_item_dto import WakatimeItemDto
 
 matplotlib.use("TkAgg")
@@ -23,9 +22,7 @@ log.setLevel(logging.DEBUG)
 
 
 def create_pie_chart(
-    data_list: list[WakatimeItemDto],
-    uuid: UUID,
-    langs_data: list[GithubLanguageItemDto] | None = None,
+    data_list: list[WakatimeItemDto], uuid: UUID, colors_data: dict[str, str] | None
 ) -> None:
     log.info(f"Creating pie chart {uuid}")
     box, (left_plot, right_plot) = plt.subplots(1, 2)  # type: ignore[all]
@@ -34,7 +31,7 @@ def create_pie_chart(
     names: list[str] = [data.name for data in data_list[:5]]
     hours: list[str] = [data.text for data in data_list[:5]]
 
-    colors = _get_colors(langs_data, names)
+    colors = _map_colors(colors_data, data_list)
 
     # creating pie based on percents, shape it with wedgeprops
     wedges, autotext = right_plot.pie(
@@ -64,21 +61,20 @@ def create_pie_chart(
     chart_manager.save_chart(box, uuid)
 
 
-def _get_colors(
-    github_langs_data: list[GithubLanguageItemDto] | None, languages: list[str]
+def _map_colors(
+    item_colors: dict[str, str] | None, items: list[WakatimeItemDto]
 ) -> list[str | tuple[float, float, float, float]] | None:
-    if github_langs_data is None:
+    if item_colors is None:
         return None
 
     colors: list[str | tuple[float, float, float, float]] = []
     defaultColors = plt.get_cmap("tab10")
 
-    for index, language in enumerate(languages):
+    for index, item in enumerate(items):
         found = False
-        for github_language in github_langs_data:
-
-            if github_language.name.lower() == language.lower():
-                _ = colors.append(github_language.color)
+        for key in item_colors:
+            if key.lower() == item.name.lower():
+                _ = colors.append(item_colors[key])
                 found = True
                 break
 
