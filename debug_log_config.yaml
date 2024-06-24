@@ -20,8 +20,14 @@ loggers:
       - default
     propagate: no
 
+  app:
+    level: DEBUG
+    handlers:
+      - default
+    propagate: no
+
 root:
-  level: DEBUG
+  level: WARNING
   handlers: 
     - default
   propagate: no
