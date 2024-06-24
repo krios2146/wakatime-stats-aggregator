@@ -1,3 +1,4 @@
+from functools import reduce
 import logging
 from . import chart_builder
 from . import chart_manager
@@ -38,9 +39,14 @@ def create_chart(chart_request: ChartRequest) -> Chart | None:
 
     assert data is not None
 
+    data = _hide(data, chart_request.hide)
+    data = _group(data, chart_request.groups)
+
     match chart_request.chart_type:
         case ChartType.PIE:
-            chart_builder.create_pie_chart(data, chart_request.uuid, github_languages)
+            chart_builder.create_pie_chart(
+                data, chart_request.uuid, chart_request.colors
+            )
 
     chart_path: str | None = chart_manager.find_by_uuid(chart_request.uuid)
 
@@ -48,3 +54,68 @@ def create_chart(chart_request: ChartRequest) -> Chart | None:
         return None
 
     return Chart(chart_request.uuid, chart_path)
+
+
+def _hide(data: list[WakatimeItemDto], hide: set[str] | None) -> list[WakatimeItemDto]:
+    if hide is None:
+        return data
+
+    return list(filter(lambda x: x.name.lower() not in hide, data))
+
+
+def _group(
+    data: list[WakatimeItemDto], groups: dict[str, set[str]] | None
+) -> list[WakatimeItemDto]:
+    if groups is None:
+        return data
+
+    grouped_items: list[WakatimeItemDto] = list()
+
+    for group_name, group_item_names in groups.items():
+        group_items = list(filter(lambda x: x.name in group_item_names, data))
+
+        if len(group_items) == 0:
+            continue
+
+        grouped_item = reduce(_combine_items, group_items)
+        grouped_item.name = group_name
+        grouped_items.append(grouped_item)
+
+    non_grouped_items = list(filter(lambda x: x.name not in groups.values(), data))
+
+    grouped_data = grouped_items + non_grouped_items
+
+    grouped_data.sort(key=lambda x: x.total_seconds, reverse=True)
+
+    return grouped_data
+
+
+def _combine_items(
+    item_one: WakatimeItemDto, item_two: WakatimeItemDto
+) -> WakatimeItemDto:
+    combined_total_seconds: float = item_one.total_seconds + item_two.total_seconds
+    combined_percent: float = item_one.percent + item_two.percent
+    combined_hours: int = item_one.hours + item_two.hours
+    combined_minutes: int = item_one.minutes + item_two.minutes
+
+    if combined_minutes >= 60:
+        hours = combined_minutes // 60
+        minutes = combined_minutes % 60
+
+        combined_hours += hours
+        combined_minutes = minutes
+
+    combined_digital = f"{combined_hours}:{combined_minutes}"
+    combined_decimal = f"{combined_hours}.{combined_minutes // 0.6}"
+    combined_text = f"{f"{combined_hours} hrs" if combined_hours != 0 else ""} {combined_minutes} mins"
+
+    return WakatimeItemDto(
+        total_seconds=combined_total_seconds,
+        name=item_one.name,
+        percent=combined_percent,
+        digital=combined_digital,
+        decimal=combined_decimal,
+        text=combined_text,
+        hours=combined_hours,
+        minutes=combined_minutes,
+    )
