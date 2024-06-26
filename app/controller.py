@@ -17,11 +17,18 @@ app = FastAPI()
 
 
 @app.get("/api/{username}/pie/languages")
-def languages(username: str, hide: str | None = None) -> FileResponse:
+def languages(username: str, request: Request, hide: str | None = None) -> FileResponse:
     languages_to_hide: set[str] | None = _parse_hide(hide)
+    language_colors: dict[str, str] | None = _parse_colors(request.query_params)
+
+    log.info(language_colors)
 
     chart_request: ChartRequest = ChartRequest(
-        ChartType.PIE, ChartData.LANGUAGES, username, hide=languages_to_hide
+        ChartType.PIE,
+        ChartData.LANGUAGES,
+        username,
+        hide=languages_to_hide,
+        colors=language_colors,
     )
 
     chart: Chart | None = chart_service.create_chart(chart_request)
@@ -174,3 +181,23 @@ def _parse_project_colors(
         project_colors[key] = query_item[1]
 
     return project_colors
+
+
+def _parse_colors(query: QueryParams | None) -> dict[str, str] | None:
+    if query is None:
+        return None
+
+    colors: dict[str, str] | None = None
+
+    for query_item in query.items():
+        key = query_item[0]
+
+        if key == "hide":
+            continue
+
+        if colors is None:
+            colors = dict()
+
+        colors[key] = query_item[1]
+
+    return colors
