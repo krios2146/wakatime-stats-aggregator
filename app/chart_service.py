@@ -115,7 +115,9 @@ def _group(
         grouped_item.name = group_name
         grouped_items.append(grouped_item)
 
-    non_grouped_items = list(filter(lambda x: x.name not in groups.values(), data))
+    grouped_items_names = reduce(lambda acc, x: acc | x, groups.values(), set[str]())
+
+    non_grouped_items = list(filter(lambda x: x.name not in grouped_items_names, data))
 
     grouped_data = grouped_items + non_grouped_items
 
