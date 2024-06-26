@@ -58,20 +58,24 @@ def create_chart(chart_request: ChartRequest) -> Chart | None:
 
 
 def _merge_github_lang_colors(
-    colors: dict[str, str] | None, github_languages: list[GithubLanguageItemDto]
+    param_colors: dict[str, str] | None, github_languages: list[GithubLanguageItemDto]
 ) -> dict[str, str] | None:
-    default_colors: dict[str, str] = {
+    github_colors: dict[str, str] = {
         github_language.name: github_language.color
         for github_language in github_languages
     }
 
-    if colors is None:
-        return default_colors
+    if param_colors is None:
+        return github_colors
 
-    for default_color in default_colors:
-        for color in colors:
-            if default_color.lower() == color:
-                default_colors[color] = colors[color]
+    merged_colors = github_colors.copy()
+
+    for github_color in github_colors:
+        for param_color in param_colors:
+            if github_color.lower() == param_color.lower():
+                merged_colors[github_color] = param_colors[param_color]
+
+    return merged_colors
 
 
 def _merge_group_colors(
