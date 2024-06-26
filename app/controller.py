@@ -21,8 +21,6 @@ def languages(username: str, request: Request, hide: str | None = None) -> FileR
     languages_to_hide: set[str] | None = _parse_hide(hide)
     language_colors: dict[str, str] | None = _parse_colors(request.query_params)
 
-    log.info(language_colors)
-
     chart_request: ChartRequest = ChartRequest(
         ChartType.PIE,
         ChartData.LANGUAGES,
@@ -84,11 +82,16 @@ def projects(
 
 
 @app.get("/api/{username}/pie/editors")
-def editors(username: str, hide: str | None = None):
+def editors(username: str, request: Request, hide: str | None = None):
     editors_to_hide: set[str] | None = _parse_hide(hide)
+    editor_colors: dict[str, str] | None = _parse_colors(request.query_params)
 
     chart_request: ChartRequest = ChartRequest(
-        ChartType.PIE, ChartData.PROJECTS, username, hide=editors_to_hide
+        ChartType.PIE,
+        ChartData.EDITORS,
+        username,
+        hide=editors_to_hide,
+        colors=editor_colors,
     )
 
     chart: Chart | None = chart_service.create_chart(chart_request)
