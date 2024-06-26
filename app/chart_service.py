@@ -42,8 +42,8 @@ def create_chart(chart_request: ChartRequest) -> Chart | None:
 
     assert data is not None
 
-    data = _hide(data, chart_request.hide)
     data = _group(data, chart_request.groups)
+    data = _hide(data, chart_request.hide)
 
     match chart_request.chart_type:
         case ChartType.PIE:
@@ -116,7 +116,6 @@ def _group(
         grouped_items.append(grouped_item)
 
     grouped_items_names = reduce(lambda acc, x: acc | x, groups.values(), set[str]())
-
     non_grouped_items = list(filter(lambda x: x.name not in grouped_items_names, data))
 
     grouped_data = grouped_items + non_grouped_items
