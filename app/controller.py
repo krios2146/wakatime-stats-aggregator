@@ -111,7 +111,7 @@ def _parse_hide_list(hide_query: list[str] | None) -> set[str] | None:
     elements_to_hide: set[str] = set()
 
     for hide_param in hide_query:
-        elements_to_hide.update(hide_param.split(","))
+        elements_to_hide.update(map(str.lower, hide_param.split(",")))
 
     return elements_to_hide
 
@@ -120,7 +120,7 @@ def _parse_hide(hide_query: str | None) -> set[str] | None:
     if hide_query is None:
         return None
 
-    elements_to_hide: set[str] = set(hide_query.split(","))
+    elements_to_hide: set[str] = set(map(str.lower, hide_query.split(",")))
 
     return elements_to_hide if len(elements_to_hide) != 0 else None
 
@@ -151,7 +151,7 @@ def _parse_group(
             if groups is None:
                 groups = dict()
 
-            groups[group] = set(projects.split(","))
+            groups[group] = set(map(str.lower, projects.split(",")))
 
         if color is not None:
             if colors is None:
