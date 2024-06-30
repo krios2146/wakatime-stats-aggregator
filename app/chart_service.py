@@ -155,12 +155,12 @@ def _filter_wildcard_items(
         filtered_out = False
 
         for prefix in prefixes:
-            if item.name.startswith(prefix):
+            if item.name.lower().startswith(prefix):
                 filtered_out = True
                 break
 
         for suffix in suffixes:
-            if item.name.endswith(suffix):
+            if item.name.lower().endswith(suffix):
                 filtered_out = True
                 break
 
