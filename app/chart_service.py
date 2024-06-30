@@ -106,7 +106,8 @@ def _group(
     grouped_items: list[WakatimeItemDto] = list()
 
     for group_name, group_item_names in groups.items():
-        group_items = _filter(data, group_item_names)
+        non_grouped_items = _filter(data, group_item_names)
+        group_items = list(filter(lambda x: x not in non_grouped_items, data))
 
         if len(group_items) == 0:
             continue
@@ -116,7 +117,7 @@ def _group(
         grouped_items.append(grouped_item)
 
     grouped_items_names = reduce(lambda acc, x: acc | x, groups.values(), set[str]())
-    non_grouped_items = list(filter(lambda x: x.name not in grouped_items_names, data))
+    non_grouped_items = _filter(data, grouped_items_names)
 
     grouped_data = grouped_items + non_grouped_items
 
