@@ -94,7 +94,7 @@ def _hide(data: list[WakatimeItemDto], hide: set[str] | None) -> list[WakatimeIt
     if hide is None:
         return data
 
-    return list(filter(lambda x: x.name.lower() not in hide, data))
+    return _filter(data, hide)
 
 
 def _group(
@@ -106,7 +106,7 @@ def _group(
     grouped_items: list[WakatimeItemDto] = list()
 
     for group_name, group_item_names in groups.items():
-        group_items = list(filter(lambda x: x.name in group_item_names, data))
+        group_items = _filter(data, group_item_names)
 
         if len(group_items) == 0:
             continue
@@ -123,6 +123,50 @@ def _group(
     grouped_data.sort(key=lambda x: x.total_seconds, reverse=True)
 
     return grouped_data
+
+
+def _filter(
+    items: list[WakatimeItemDto], item_names: set[str]
+) -> list[WakatimeItemDto]:
+    filtered_wildcards = _filter_wildcard_items(items, item_names)
+    return _filter_items(filtered_wildcards, item_names)
+
+
+def _filter_items(
+    items: list[WakatimeItemDto], item_names: set[str]
+) -> list[WakatimeItemDto]:
+    return list(filter(lambda x: x.name.lower() not in item_names, items))
+
+
+def _filter_wildcard_items(
+    items: list[WakatimeItemDto], item_names: set[str]
+) -> list[WakatimeItemDto]:
+    filtered_items: list[WakatimeItemDto] = list()
+
+    suffixes = list(
+        map(lambda x: x[2:], filter(lambda x: x.startswith("**"), item_names))
+    )
+    prefixes = list(
+        map(lambda x: x[:-2], filter(lambda x: x.endswith("**"), item_names))
+    )
+
+    for item in items:
+        filtered_out = False
+
+        for prefix in prefixes:
+            if item.name.startswith(prefix):
+                filtered_out = True
+                break
+
+        for suffix in suffixes:
+            if item.name.endswith(suffix):
+                filtered_out = True
+                break
+
+        if not filtered_out:
+            filtered_items.append(item)
+
+    return filtered_items
 
 
 def _combine_items(
