@@ -35,7 +35,11 @@ def create_pie_chart(
 
     # creating pie based on percents, shape it with wedgeprops
     wedges, autotext = right_plot.pie(
-        percents, colors=colors, wedgeprops=dict(width=0.2, radius=0.95)
+        percents,
+        colors=colors,
+        wedgeprops=dict(width=0.2, radius=0.95),
+        startangle=90,
+        counterclock=False,
     )
 
     # building left side legend
